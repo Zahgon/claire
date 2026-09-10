@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.cloudflare</groupId>
+  <artifactId>claire</artifactId>
+  <version>0.11.1</version>
+  <packaging>jar</packaging>
+
+  <name>Claire</name>
+  <description>Shows an orange cloud in the omnibar when you are browsing a site that uses Cloudflare</description>
+  <url>https://github.com/cloudflare/claire</url>
+
+  <licenses>
+    <license>
+      <name>BSD-3-Clause</name>
+      <url>https://opensource.org/licenses/BSD-3-Clause</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/cloudflare/claire</url>
+    <connection>scm:git:https://github.com/cloudflare/claire.git</connection>
+  </scm>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <jackson.version>2.17.2</jackson.version>
+    <icu4j.version>75.1</icu4j.version>
+    <junit.version>5.10.3</junit.version>
+    <jacoco.version>0.8.12</jacoco.version>
+  </properties>
+
+  <dependencies>
+    <!--
+      Runtime dependency justification:
+      JavaScript parses `airports.js` natively (it is a CommonJS module whose body is a
+      JSON object literal). Java has no built-in JSON reader, so the airport table has to
+      be parsed by something. Jackson Databind is the minimum viable replacement for a
+      language feature the source relied on; it adds no behaviour of its own.
+      No other runtime dependency is introduced.
+    -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <!--
+      Runtime dependency justification:
+      `Request.getCloudFlareTrace` builds its link with the browser's URL parser, which
+      canonicalises the host by UTS-46 (Unicode IDNA Compatibility Processing). The JDK ships only
+      `java.net.IDN`, which implements the superseded IDNA2003 and folds the four UTS-46 deviation
+      characters, so a host spelled with a sharp s resolves to a *different* host than the browser
+      resolves it to. That is an observable divergence in a link the popup renders, and it cannot
+      be closed without a UTS-46 implementation. ICU4J is the reference one. It is heavyweight
+      (about 14 MB), and it is carried for exactly this: replacing a facility the source received
+      free from the browser, not adding a capability.
+    -->
+    <dependency>
+      <groupId>com.ibm.icu</groupId>
+      <artifactId>icu4j</artifactId>
+      <version>${icu4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals><goal>prepare-agent</goal></goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals><goal>report</goal></goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
